@@ -18,7 +18,20 @@ services:
       - "8086:8086" # Cổng 8086 là cổng giao diện web và API của InfluxDB
     volumes:
       - influxdb_data:/var/lib/influxdb2 # Gắn một volume để lưu trữ dữ liệu an toàn
+  postgres_db:
+    image: postgres:latest
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mppt_user
+      POSTGRES_PASSWORD: mppt_password
+      POSTGRES_DB: mppt_database
+    ports:
+      - "5432:5432" # Cổng mặc định của PostgreSQL
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 # ---- THÊM PHẦN NÀY Ở DƯỚI CÙNG ----
 volumes:
-  influxdb_data: # Định nghĩa volume mà chúng ta đã sử dụng ở trên
+  influxdb_data:
+  postgres_data: # Định nghĩa volume mà chúng ta đã sử dụng ở trên

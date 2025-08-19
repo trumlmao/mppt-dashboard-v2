@@ -5,8 +5,7 @@ from datetime import datetime
 # Import các thư viện mới
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
-import config # Import file config của chúng ta
-
+from . import config # Import file config của chúng ta
 class DataManager:
     def __init__(self, state_file='latest_state.json'):
         self.state_file = state_file
@@ -52,3 +51,35 @@ class DataManager:
                 return {}
         except (IOError, json.JSONDecodeError) as e:
             return {"error": "Failed to read data"}
+    def query_historical_data(self, time_range='-1h'):
+    
+        try:
+            query_api = self.influx_client.query_api()
+        
+            flux_query = (
+                f'from(bucket: "{config.INFLUXDB_BUCKET}")\n'
+                f'  |> range(start: {time_range})\n'
+                f'  |> filter(fn: (r) => r["_measurement"] == "mppt_measurement")\n'
+                f'  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")' # Pivot là rất quan trọng
+            )
+        
+            print(f"DEBUG INFLUX: Executing query:\n{flux_query}")
+        
+            tables = query_api.query(flux_query, org=config.INFLUXDB_ORG)
+        
+            results = []
+            for table in tables:
+                for record in table.records:
+                # SỬA LỖI: Truy cập dữ liệu như một dictionary bằng record.values
+                # Đây là cách làm mới và đúng đắn
+                    row = record.values
+                    results.append({
+                        "time": row.get('_time').isoformat(), # Dùng .get() để an toàn
+                        "voltage": row.get('voltage'),
+                        "temperature": row.get('temperature'),
+                        "battery_current": row.get('battery_current'),
+                    })
+            return results
+        except Exception as e:
+            print(f"Lỗi khi truy vấn InfluxDB: {e}")
+            return []

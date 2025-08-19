@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MPPT Solar Charger Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #1e1e1e; color: #d4d4d4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .dashboard { width: 90%; max-width: 450px; padding: 25px; background-color: #2d2d2d; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #1e1e1e; color: #d4d4d4; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 20px; padding: 20px; }
+        .card { width: 100%; max-width: 450px; min-width: 350px; padding: 25px; background-color: #2d2d2d; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .chart-container { width: 100%; max-width: 800px; padding: 25px; background-color: #2d2d2d; border-radius: 10px; }
         h2 { text-align: center; color: #4e9a06; margin-top: 0; }
         .metric { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #444; font-size: 1.1em; }
         .metric:last-child { border-bottom: none; }
@@ -15,69 +18,93 @@
     </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Thẻ Dữ liệu Live -->
+        <div class="card">
+            <h2>Live Data</h2>
+            <!-- THÊM LẠI CÁC METRIC CÒN THIẾU -->
+            <div class="metric">
+                <span class="label">Voltage:</span>
+                <span id="voltage-value" class="value">-- V</span>
+            </div>
+            <div class="metric">
+                <span class="label">Temperature:</span>
+                <span id="temp-value" class="value">-- °C</span>
+            </div>
+            <div class="metric">
+                <span class="label">Battery Current:</span>
+                <span id="battery-curr-value" class="value">-- A</span>
+            </div>
+            <div class="metric">
+                <span class="label">Last Updated:</span>
+                <span id="timestamp-value" class="value">--</span>
+            </div>
+        </div>
 
-    <div class="dashboard">
-        <h2>MPPT Live Data</h2>
-        <div class="metric">
-            <span class="label">Voltage:</span>
-            <span id="voltage-value" class="value">-- V</span>
-        </div>
-        <div class="metric">
-            <span class="label">Temperature:</span>
-            <span id="temp-value" class="value">-- °C</span>
-        </div>
-        <div class="metric">
-            <span class="label">Battery Current:</span>
-            <span id="battery-curr-value" class="value">-- A</span>
-        </div>
-         <div class="metric">
-            <span class="label">Last Updated:</span>
-            <span id="timestamp-value" class="value">--</span>
+        <!-- Thẻ Biểu đồ -->
+        <div class="chart-container">
+            <h2>Voltage History (Last 10 Minutes)</h2>
+            <canvas id="voltageChart"></canvas>
         </div>
     </div>
 
     <script>
-        // Lấy các element một lần để tối ưu
+        // === PHẦN DỮ LIỆU LIVE (ĐÃ SỬA) ===
         const voltageEl = document.getElementById('voltage-value');
         const tempEl = document.getElementById('temp-value');
         const batteryCurrEl = document.getElementById('battery-curr-value');
         const timestampEl = document.getElementById('timestamp-value');
 
-        async function updateDashboard() {
+        async function updateLiveData() {
             try {
                 const response = await fetch('/api/latest-data');
-                // Kiểm tra nếu request không thành công
-                if (!response.ok) {
-                    console.error("Lỗi mạng hoặc server:", response.status);
-                    return; // Dừng hàm nếu có lỗi
-                }
                 const data = await response.json();
 
-                // Dùng console.log để gỡ lỗi, xem dữ liệu nhận được là gì
-                console.log("Dữ liệu nhận được từ API:", data);
-
-                // Cập nhật các giá trị một cách an toàn
+                // THÊM LẠI CÁC DÒNG CẬP NHẬT CÒN THIẾU
                 voltageEl.textContent = data.voltage !== undefined ? data.voltage.toFixed(1) + ' V' : '-- V';
                 tempEl.textContent = data.temp !== undefined ? data.temp.toFixed(1) + ' °C' : '-- °C';
                 batteryCurrEl.textContent = data.battery_curr !== undefined ? data.battery_curr.toFixed(1) + ' A' : '-- A';
                 
                 if (data.timestamp) {
-                    const date = new Date(data.timestamp);
-                    timestampEl.textContent = date.toLocaleTimeString('en-GB'); // Định dạng HH:MM:SS
+                    timestampEl.textContent = new Date(data.timestamp).toLocaleTimeString('en-GB');
                 } else {
                     timestampEl.textContent = '--';
                 }
-
             } catch (error) {
-                console.error('Lỗi khi fetch hoặc xử lý dữ liệu:', error);
+                console.error('Lỗi khi cập nhật Live Data:', error);
             }
         }
+        updateLiveData();
+        setInterval(updateLiveData, 2000);
 
-        // Chạy ngay lần đầu tiên
-        updateDashboard();
-        // Chạy định kỳ 2 giây một lần
-        setInterval(updateDashboard, 2000);
+        // === PHẦN BIỂU ĐỒ (GIỮ NGUYÊN) ===
+        const ctx = document.getElementById('voltageChart').getContext('2d');
+        const voltageChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Voltage (V)', data: [], borderColor: '#73d216', tension: 0.1 }] },
+            options: {
+                scales: { x: { ticks: { color: '#a0a0a0' } }, y: { ticks: { color: '#a0a0a0' }, beginAtZero: false } },
+                plugins: { legend: { labels: { color: '#d4d4d4' } } }
+            }
+        });
+
+        async function updateChart() {
+            try {
+                const response = await fetch('/api/historical-data');
+                const history = await response.json();
+                
+                const labels = history.map(d => new Date(d.time).toLocaleTimeString('en-GB'));
+                const voltageData = history.map(d => d.voltage);
+
+                voltageChart.data.labels = labels;
+                voltageChart.data.datasets[0].data = voltageData;
+                voltageChart.update();
+            } catch (error) {
+                console.error('Lỗi khi cập nhật biểu đồ:', error);
+            }
+        }
+        updateChart();
+        setInterval(updateChart, 10000);
     </script>
-
 </body>
 </html>
