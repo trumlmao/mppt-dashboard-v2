@@ -1,0 +1,24 @@
+services:
+  mosquitto_broker:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto_broker
+    restart: unless-stopped
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+  # ---- THÊM SERVICE MỚI NÀY VÀO ----
+  influxdb:
+    image: influxdb:latest # Dùng image InfluxDB mới nhất
+    container_name: influxdb_service
+    restart: unless-stopped
+    ports:
+      - "8086:8086" # Cổng 8086 là cổng giao diện web và API của InfluxDB
+    volumes:
+      - influxdb_data:/var/lib/influxdb2 # Gắn một volume để lưu trữ dữ liệu an toàn
+
+# ---- THÊM PHẦN NÀY Ở DƯỚI CÙNG ----
+volumes:
+  influxdb_data: # Định nghĩa volume mà chúng ta đã sử dụng ở trên

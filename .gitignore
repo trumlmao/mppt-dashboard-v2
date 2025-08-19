@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Conda environment
+/mppt_env/
+
+# VS Code
+.vscode/
+
+# Data files (không nên đưa dữ liệu nhạy cảm hoặc file lớn lên Git)
+*.log
+latest_state.json
+influxdb_data/
