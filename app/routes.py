@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, jsonify
 from .data_manager import DataManager
 import os
-
+from .forms import LoginForm
 # Tạo một Blueprint tên là 'main'
 main_bp = Blueprint('main', __name__)
 
@@ -17,6 +17,17 @@ data_manager = DataManager(state_file=state_file_path)
 @main_bp.route('/')
 def index():
     return render_template('index.html')
+
+@main_bp.route('/dlogin')
+def dlogin():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        from flask import flash, redirect, url_for
+        flash(f'welcome ,{email}!')
+        return redirect(url_for('main.index')) 
+    return render_template('login.html',form = form)
 
 @main_bp.route('/api/latest-data')
 def get_latest_data():
