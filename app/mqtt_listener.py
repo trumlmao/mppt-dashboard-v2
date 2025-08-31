@@ -1,7 +1,7 @@
 # app/mqtt_listener.py
 import paho.mqtt.client as mqtt
 import json
-from data_manager import DataManager
+from .data_manager import DataManager
 
 # Khởi tạo DataManager
 data_manager = DataManager()
