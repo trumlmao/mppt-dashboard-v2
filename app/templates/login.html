@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body { font-family: sans-serif; margin: 50px; background: #222; color: #eee;}
+        form p { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { padding: 8px; width: 250px; background: #333; color: #eee; border: 1px solid #555; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Sign In</h1>
+    
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+
+        <p>
+            <!-- SỬA LỖI: Xóa bỏ dấu () -->
+            {{ form.username.label }}<br>
+            {{ form.username(size=32, placeholder="Enter your username") }}
+        </p>
+
+        <p>
+            <!-- SỬA LỖI: Xóa bỏ dấu () -->
+            {{ form.password.label }}<br>
+            {{ form.password(placeholder="Enter your password") }}
+        </p>
+        <p>
+    <!-- TODO: Display the remember_me checkbox and its label. -->
+    {{ form.remember_me() }} {{ form.remember_me.label }}
+</p>
+        <p>
+            {{ form.submit() }}
+        </p>
+        <p>New User? <a href="{{ url_for('main.register') }}">Click to Register!</a></p>
+    </form>
+</body>
+</html>
